@@ -16,12 +16,7 @@
   "env": {
     "STREAMLIT_SERVER_PORT": "8501",
     "PYTHON_VERSION": "3.10" 
-  },
+  }
   
-  "excludeFiles": [
-    "mlruns/**",
-    "venv/**",
-    "reports/**",
-    "data/**"
-  ]
+  // CRITICAL: The 'excludeFiles' property has been removed.
 }
