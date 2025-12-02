@@ -12,11 +12,8 @@
       "dest": "streamlit_app/main.py"
     }
   ],
-  
   "env": {
     "STREAMLIT_SERVER_PORT": "8501",
-    "PYTHON_VERSION": "3.10" 
+    "PYTHON_VERSION": "3.10"
   }
-  
-  // CRITICAL: The 'excludeFiles' property has been removed.
 }
