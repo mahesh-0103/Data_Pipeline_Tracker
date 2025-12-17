@@ -6,8 +6,6 @@ This is a professional, end-to-end Machine Learning Operations (MLOps) dashboard
 
 The application is designed for stability and efficiency on cloud hosting platforms (like Railway/Render).
 
-![Architectural Diagram of Data Pipeline Tracker](architectural_diagram.png)
-
 ### 🚀 Key Features
 
 * **Custom Pipeline Orchestration:** Uses Prefect for defining and running reproducible workflows (Ingestion -> Preprocessing -> Training -> Registration).
