@@ -23,7 +23,6 @@ def register_best_model(
     if not runs:
         raise ValueError(f"No runs found in experiment '{experiment_name}'")
 
-    # --- FIX 1: Handle NULL best_model_key/best_run_id (Use top run if best is NULL) ---
     best_run = runs[0]
     best_run_id = best_run.info.run_id
     
