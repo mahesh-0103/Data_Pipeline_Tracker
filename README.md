@@ -4,7 +4,7 @@
 
 This is a professional, end-to-end Machine Learning Operations (MLOps) dashboard built to automate the data processing, model experimentation, and deployment lifecycle for predictive models.
 
-The application is designed for stability and efficiency on cloud hosting platforms (like Railway/Render).
+The application is designed for stability and efficiency on cloud hosting platforms (like Railway or Render).
 
 ![Architectural Diagram of Data Pipeline Tracker](architectural_diagram.png)
 
