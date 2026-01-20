@@ -1,64 +1,80 @@
-# 📚 README: Data Pipeline Tracker
-
-## Project: Data Pipeline Tracker
-
-This is a professional, end-to-end Machine Learning Operations (MLOps) dashboard built to automate the data processing, model experimentation, and deployment lifecycle for predictive models.
-
-The application is designed for stability and efficiency on cloud hosting platforms (like Railway or Render).
-
-![Architectural Diagram of Data Pipeline Tracker](architectural_diagram.png)
-
-
-### 🚀 Key Features
-
-* **Custom Pipeline Orchestration:** Uses Prefect for defining and running reproducible workflows (Ingestion -> Preprocessing -> Training -> Registration).
-* **Full Model Experimentation:** Automatically trains a diverse suite of 10+ classification/regression models (including high-performance ensembles like Random Forest, XGBoost, and CatBoost).
-* **Resource Efficiency:** Implements **data type optimization (float32/int8)** and **parallel processing (`n_jobs=-1`)** to maintain stability and performance on resource-constrained cloud environments (e.g., Free Tier hosting).
-* **Robust Data Handling:** Features **Univariate Feature Selection** to manage high-dimensional data and dynamic target encoding to handle mixed categorical/numerical input and prevent data leakage.
-* **MLOps Toolchain:** Integrates Streamlit for the front-end, MLflow for experiment tracking and model registration, and Prefect for workflow orchestration.
-
-### ⚙️ Technical Stack
-
-| Category | Component | Purpose |
-| :--- | :--- | :--- |
-| **Front-end** | Streamlit | Interactive web dashboard and UI. |
-| **Orchestration** | Prefect | Automates the execution and sequencing of pipeline tasks. |
-| **ML/Data** | Scikit-learn, Pandas, NumPy | Data manipulation, preprocessing, and model implementation. |
-| **Tracking/Registry** | MLflow | Logs metrics, versions models, and handles deployment staging. |
-| **Deployment Target** | Render / Railway | Dedicated hosting for stable, resource-intensive operations. |
-
-### 🧭 Workflow Stages
-
-1. **⬆️ Upload Data:** Ingestion of data (CSV/PKL) directly via the browser.  
-2. **📊 Data Analysis:** Exploratory Data Analysis (EDA) and visualization (Histograms, Pie Charts, Correlation).  
-3. **⚙️ Run Process:** Triggers the **Continuous Training (CT)** pipeline.  
-4. **🏆 Compare Results:** Displays logged MLflow metrics for all models to select the best performer.  
-5. **📈 View Reports:** Generates final data and model performance reports for download.
-
----
-
-### 🛠️ Local Setup Instructions
-
-1. **Clone the Repository:**
+   # 📚 Data Pipeline Tracker: Professional MLOps Dashboard
+    
+    **Data Pipeline Tracker** is an end-to-end Machine Learning Operations (MLOps) platform designed to automate the lifecycle of predictive models. Built with a focus on statistical rigor and production-ready architecture, it enables seamless transitions from raw data ingestion to registered production candidates.
+    
+    ![MLOps Lifecycle](https://raw.githubusercontent.com/mahesh-0103/Data_Pipeline_Tracker/main/architectural_diagram.png)
+    
+    ## 🚀 Advanced Features
+    
+    * **Statistical Validation (K-Fold):** Implements **5-Fold Cross-Validation** to ensure performance metrics (RMSE, R², F1-Score) represent generalized model performance rather than single-split bias.
+    * **Intelligent Preprocessing:** Features automated **NaN cleaning for targets**, **Label Encoding** for categorical safety, and **Datetime Feature Extraction** to transform timestamp strings into numeric signals.
+    * **Orchestration with Prefect:** Uses a task-based orchestration layer to manage the sequence of Ingestion, Validation, Preprocessing, Training, and Registration.
+    * **Experiment Tracking via MLflow:** Integrated with an **MLflow SQLite backend** for robust local experiment management, logging hyperparameters, artifacts, and cross-validated metrics.
+    * **Production Registry:** Automated model versioning that transitions the statistically "best" run to the **"Production"** stage within the MLflow Model Registry.
+    
+    ## ⚙️ Technical Stack
+    
+    | Category | Component | Purpose |
+    | :--- | :--- | :--- |
+    | **Interface** | Streamlit | Interactive multi-stage MLOps dashboard. |
+    | **Orchestration** | Prefect | Automates task sequencing and error handling. |
+    | **Experiment Tracking**| MLflow (SQLite) | Persistent logging of metrics and model artifacts. |
+    | **Model Registry** | MLflow Registry | Standardized version control and deployment staging. |
+    | **ML Libraries** | Scikit-learn, XGBoost | Implementation of 10+ regression and classification models. |
+    | **Data Engineering** | Pandas, NumPy | Cleaning, feature extraction, and K-Fold pooling. |
+    
+    ## 🧭 Workflow Architecture
+    
+    The dashboard is organized into five modular stages to mimic a professional data science workflow:
+    
+    1. **⬆️ Data Ingestion:** Supports CSV, XLSX, PKL, and JSON with automatic type casting to prevent Arrow errors.
+    2. **📊 Analysis (EDA):** Generates univariate distributions, categorical pie charts, and correlation heatmaps to identify feature relationships.
+    3. **⚙️ Training Pipeline:** Configures the **K-Fold Cross-Validation** loop, allowing users to select optimization metrics like RMSE or F1.
+    4. **🏆 Comparative Review:** Visualizes mean CV scores across all candidates to ensure a reliable production selection.
+    5. **📈 Performance Reports:** Generates full visual reports including histograms and pairwise scatter plots for the entire dataset.
+    
+    ---
+    
+    ## 🛠️ Local Installation & Reset
+    
+    ### 1. Clone & Environment Setup
     ```bash
-    git clone https://github.com/mahesh-0103.git
+    git clone [https://github.com/mahesh-0103/Data_Pipeline_Tracker.git](https://github.com/mahesh-0103/Data_Pipeline_Tracker.git)
     cd Data_Pipeline_Tracker
-    ```
-
-2. **Create and Activate Environment:**
-    ```bash
     python -m venv venv
-    .\venv\Scripts\activate  # Windows
+    venv\Scripts\activate  # Windows
     # source venv/bin/activate  # macOS/Linux
-    ```
-
-3. **Install Dependencies:**
-    ```bash
     pip install -r requirements.txt
-    ```
+    
 
-4. **Run Application:**
-    ```bash
+### 2\. Initialize Backend Servers
+
+To ensure a clean initialization of the tracking metadata and resolve potential synchronization errors:
+
+**Terminal A: MLflow (Tracking Server)**
+
+Bash
+
+    mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns
+    
+
+**Terminal B: Prefect (Orchestration Server)**
+
+Bash
+
+    prefect server database reset -y
+    prefect server start
+    
+
+### 3\. Launch Frontend
+
+**Terminal C: Streamlit Dashboard**
+
+Bash
+
     streamlit run streamlit_app/main.py
-    ```
+    
+
+* * *
+
 
