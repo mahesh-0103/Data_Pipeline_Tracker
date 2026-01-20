@@ -4,7 +4,7 @@ import pandas as pd
 import json
 
 # --- MAPPING FOR VERBOSE DISPLAY ---
-# This map ensures the technical key (e.g., 'rf_clf') is converted to a clear name (e.g., 'Random Forest Classifier')
+# Converts technical keys to clear, professional names
 VERBOSE_MODEL_MAP = {
     "LinearReg": "Linear Regression", "RidgeReg": "Ridge Regression", "LassoReg": "Lasso Regression",
     "KNNReg": "KNN Regressor", "SVR": "Support Vector Reg.", "RandomForestReg": "Random Forest Regressor", 
@@ -20,74 +20,73 @@ VERBOSE_MODEL_MAP = {
     "LGBMClf": "LGBM Classifier", "CatBoostClf": "CatBoost Classifier",
 }
 
-# Helper function for user-friendly name display
 def get_display_name(key: str) -> str:
-    if key is None or key == "":
-        return "N/A (No Best Model Selected)"
-    
-    # Use the verbose map, otherwise default to replacing underscores
+    """Helper for user-friendly name display."""
+    if not key:
+        return "N/A"
     return VERBOSE_MODEL_MAP.get(key, key.replace('_', ' ').title())
 
 def app():
-    st.subheader("🏆 Comparative Results and Registration")
+    st.subheader("🏆 Comparative Results (K-Fold Averages)")
     st.markdown("---")
+    
     runs = st.session_state.get("train_runs")
     if not runs:
-        st.info("No training runs available in the session. Please run the **Run Process** page first.")
+        st.info("No training runs available. Please execute the pipeline on the **⚙️ Run Process** page.")
         return
 
     st.subheader("All Training Runs")
+    st.caption("Metrics shown are the mean averages calculated via 5-Fold Cross-Validation.")
     
     # --- Dynamic Metric Display ---
+    # Extract keys from the metrics dictionary which now contains K-Fold means
     runs_data = [r.get("metrics", {}) for r in runs]
-    all_metrics = set().union(*(d.keys() for d in runs_data))
+    all_metrics = sorted(list(set().union(*(d.keys() for d in runs_data))))
     
-    metadata_cols = ["Model"]
-    display_cols = metadata_cols + sorted(list(all_metrics))
+    # Build dataframe for display
+    comparison_list = []
+    for r in runs:
+        row = {"Model": get_display_name(r.get("model_key"))}
+        row.update(r.get("metrics", {}))
+        comparison_list.append(row)
     
-    df = pd.DataFrame([
-        {
-            "Model": get_display_name(r.get("model_key") or r.get("model", "")), 
-            **r.get("metrics", {})
-        } 
-        for r in runs
-    ])
+    df = pd.DataFrame(comparison_list)
     
-    df = df.reindex(columns=display_cols, fill_value='—') 
-    
-    # Ensure the dataframe width is stretched to show full names
-    st.dataframe(df, width='stretch')
+    # Highlight the best values (Min for errors, Max for R2/F1)
+    style_df = df.style.format(precision=4)
+    if 'r2' in df.columns:
+        style_df = style_df.highlight_max(subset=['r2'], color='#2E7D32')
+    if 'f1' in df.columns:
+        style_df = style_df.highlight_max(subset=['f1'], color='#2E7D32')
+    if 'rmse' in df.columns:
+        style_df = style_df.highlight_min(subset=['rmse'], color='#2E7D32')
 
-    # --- END Dynamic Metric Display ---
+    st.dataframe(style_df, use_container_width=True)
 
     st.markdown("---")
 
-    st.subheader("Best Model Summary")
+    # --- Best Model Summary Card ---
+    st.subheader("Selected Production Candidate")
     
     best_metric = st.session_state.get("best_metric_name", "N/A")
     best_value = st.session_state.get("best_metric_value", None)
     best_model_key = st.session_state.get("best_model_key", None)
 
-    # Convert best_value for display
-    display_value = "—"
-    if best_value is not None:
-        try:
-            display_value = f"{best_value:.4f}"
-        except TypeError:
-            display_value = str(best_value)
-
     col_1, col_2, col_3 = st.columns(3)
-    col_1.metric("Best Metric", best_metric)
-    col_2.metric("Best Value", display_value)
-    col_3.metric("Best Model", get_display_name(best_model_key)) # Displays the full verbose name
+    col_1.metric("Optimization Metric", best_metric.upper())
+    
+    display_val = f"{best_value:.4f}" if isinstance(best_value, (int, float)) else "—"
+    col_2.metric("Mean CV Score", display_val)
+    
+    col_3.metric("Best Architecture", get_display_name(best_model_key))
 
     st.markdown("---")
 
-    st.subheader("Downloads")
+    st.subheader("Export Results")
     st.download_button(
-        label="⬇️ Download Runs JSON", 
+        label="⬇️ Download Runs Metadata (JSON)", 
         data=json.dumps(runs, indent=4, default=str), 
-        file_name="runs.json",
+        file_name="kfold_runs_metadata.json",
         mime="application/json",
-        help="Download all metadata for the training runs."
+        help="Download full details of the cross-validation results."
     )
