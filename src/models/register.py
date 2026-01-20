@@ -1,58 +1,35 @@
 # src/models/register.py
 import mlflow
 from mlflow.tracking import MlflowClient
-from mlflow.exceptions import MlflowException # Added for clarity
+from mlflow.exceptions import MlflowException
 
-# ------------------------------------------------------------
-# REGISTER BEST MODEL USING USER METRIC
-# ------------------------------------------------------------
-def register_best_model(
-    experiment_name: str,
-    model_name: str,
-    metric_name: str,
-    maximize: bool = False
-):
+def register_best_model(experiment_name: str, model_name: str, metric_name: str, maximize: bool = False):
+    """Registers the top run using cross-validated metrics."""
     client = MlflowClient()
     exp = client.get_experiment_by_name(experiment_name)
     if exp is None:
-        raise ValueError(f"Experiment '{experiment_name}' not found")
+        raise ValueError(f"Experiment '{experiment_name}' not found.")
 
-    exp_id = exp.experiment_id
-    runs = client.search_runs(exp_id, order_by=[f"metrics.{metric_name} DESC" if maximize else f"metrics.{metric_name} ASC"])
+    runs = client.search_runs(
+        experiment_ids=[exp.experiment_id],
+        order_by=[f"metrics.{metric_name} {'DESC' if maximize else 'ASC'}"],
+        max_results=1
+    )
 
     if not runs:
-        raise ValueError(f"No runs found in experiment '{experiment_name}'")
+        raise ValueError("No valid runs found to register.")
 
     best_run = runs[0]
     best_run_id = best_run.info.run_id
     
-    # Get the key used for the model artifact from the run's tags
-    model_key = best_run.data.tags.get('mlflow.runName')
-
-    if model_key is None:
-        # Fallback if runName tag is missing (shouldn't happen with our train.py)
-        raise MlflowException("Best run does not have a valid 'mlflow.runName' tag.")
-    # --- END FIX 1 ---
-
-    metric_value = best_run.data.metrics.get(metric_name)
-
-    # --- CRITICAL FIX 2: Use the model_key as the artifact path ---
-    # The artifact path must match the name used in train_and_log (which is the model_key)
-    mv = mlflow.register_model(
-        model_uri=f"runs:/{best_run_id}/{model_key}", 
-        name=model_name
-    )
-    # --- END CRITICAL FIX 2 ---
-
-    client.transition_model_version_stage(
-        name=model_name,
-        version=mv.version,
-        stage="Production"
-    )
-
-    print(f"[REGISTRY] Best run: {best_run_id}")
-    print(f"[REGISTRY] Best model key: {model_key}")
-    print(f"[REGISTRY] Best {metric_name}: {metric_value}")
-    print(f"[REGISTRY] Model '{model_name}' version {mv.version} promoted to PRODUCTION")
-
-    return mv.version, metric_value, best_run_id
+    # Matches artifact_path="model" from train.py
+    model_uri = f"runs:/{best_run_id}/model"
+    
+    try:
+        mv = mlflow.register_model(model_uri=model_uri, name=model_name)
+        client.transition_model_version_stage(name=model_name, version=mv.version, stage="Production")
+        print(f"[REGISTRY] Successfully promoted {model_name} v{mv.version} to Production.")
+        return mv.version, best_run.data.metrics.get(metric_name), best_run_id
+    except MlflowException as e:
+        print(f"[REGISTRY ERROR] Failed to register: {e}")
+        raise
